@@ -37,7 +37,7 @@ export const connectDB = async (): Promise<boolean> => {
     await sequelize.authenticate();
     console.log("✅ PostgreSQL connected successfully");
 
-    // TODO: 글로벌 DB 상태 업데이트 - 연결 성공
+    // 글로벌 DB 상태 업데이트 - 연결 성공
     DBStatus.setConnected(true);
 
     // 데이터베이스 동기화 (개발 환경에서만)
@@ -51,7 +51,7 @@ export const connectDB = async (): Promise<boolean> => {
   } catch (error) {
     console.error("❌ Failed to connect to PostgreSQL:", error);
 
-    // TODO: 글로벌 DB 상태 업데이트 - 연결 실패
+    // 글로벌 DB 상태 업데이트 - 연결 실패
     DBStatus.setConnected(false);
 
     // 개발 환경에서는 DB 연결 실패해도 서버 계속 실행
@@ -59,12 +59,41 @@ export const connectDB = async (): Promise<boolean> => {
       console.warn(
         "⚠️ Running in development mode without database connection"
       );
+      console.warn("⚠️ Database-dependent features will be unavailable");
       return false;
     }
 
-    // 프로덕션 환경에서는 DB 연결 필수
-    process.exit(1);
+    // 프로덕션 환경에서는 DB 연결 실패 시 에러를 던지지만 프로세스는 종료하지 않음
+    // 상위에서 처리하도록 함
+    throw new Error(`Database connection failed: ${error}`);
   }
+};
+
+// DB 재연결 시도 함수
+export const reconnectDB = async (): Promise<boolean> => {
+  console.log("🔄 Attempting to reconnect to database...");
+  return await connectDB();
+};
+
+// 주기적 DB 연결 상태 체크 (개발 환경에서만)
+export const startDBHealthCheck = () => {
+  if (process.env.NODE_ENV !== "development") return;
+
+  const checkInterval = 30000; // 30초마다 체크
+
+  setInterval(async () => {
+    if (!DBStatus.isConnected()) {
+      try {
+        const reconnected = await reconnectDB();
+        if (reconnected) {
+          console.log("✅ Database reconnected successfully!");
+        }
+      } catch (error) {
+        // 재연결 실패는 조용히 처리 (로그만 남김)
+        console.log("🔄 Database still unavailable, will retry later...");
+      }
+    }
+  }, checkInterval);
 };
 
 export default sequelize;

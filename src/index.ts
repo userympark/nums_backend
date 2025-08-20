@@ -3,7 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import dotenv from "dotenv";
-import { connectDB } from "./config/database";
+import { connectDB, startDBHealthCheck, reconnectDB } from "./config/database";
 import { errorHandler } from "./middleware/errorHandler";
 import { requireDB, optionalDB } from "./middleware/dbCheck";
 import { DBStatus } from "./utils/dbStatus";
@@ -45,7 +45,6 @@ app.get("/", (req, res) => {
 
 // 헬스 체크 엔드포인트 (DB 연결 없이도 동작)
 app.get("/api/health", optionalDB, (req, res) => {
-  // TODO: 글로벌 DB 상태 사용 - 실시간 연결 체크 없이 캐시된 상태 사용
   const dbStatus = DBStatus.isConnected() ? "connected" : "disconnected";
 
   res.json({
@@ -58,6 +57,38 @@ app.get("/api/health", optionalDB, (req, res) => {
       type: "PostgreSQL + Sequelize",
     },
   });
+});
+
+// DB 재연결 엔드포인트 (개발 환경에서만)
+app.post("/api/reconnect-db", async (req, res) => {
+  if (process.env.NODE_ENV !== "development") {
+    return res.status(403).json({
+      success: false,
+      message: "Database reconnection is only available in development mode",
+    });
+  }
+
+  try {
+    const reconnected = await reconnectDB();
+
+    return res.json({
+      success: true,
+      message: reconnected
+        ? "Database reconnected successfully"
+        : "Database connection failed",
+      database: {
+        status: reconnected ? "connected" : "disconnected",
+        timestamp: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to reconnect to database",
+      error: error instanceof Error ? error.message : "Unknown error",
+      timestamp: new Date().toISOString(),
+    });
+  }
 });
 
 // Swagger UI
@@ -79,26 +110,46 @@ app.use(errorHandler);
 
 // 서버 시작
 const startServer = async () => {
+  let dbConnected = false;
+
   try {
     // 데이터베이스 연결 시도
-    const dbConnected = await connectDB();
-
-    app.listen(PORT, () => {
-      console.log(`🚀 Server is running on port ${PORT}`);
-      console.log(`📊 Environment: ${process.env.NODE_ENV}`);
-
-      if (dbConnected) {
-        console.log(`🗄️ PostgreSQL + Sequelize Ready!`);
-      } else {
-        console.log(
-          `⚠️ Running without database connection (development mode)`
-        );
-      }
-    });
+    dbConnected = await connectDB();
   } catch (error) {
-    console.error("❌ Failed to start server:", error);
-    process.exit(1);
+    console.error("❌ Database connection failed:", error);
+
+    // 개발 환경에서는 DB 없이도 서버 실행
+    if (process.env.NODE_ENV === "development") {
+      console.warn("⚠️ Continuing without database in development mode");
+      dbConnected = false;
+    } else {
+      // 프로덕션에서는 DB 연결 필수
+      console.error("❌ Database connection is required in production");
+      process.exit(1);
+    }
   }
+
+  // 서버 시작
+  app.listen(PORT, () => {
+    console.log(`🚀 Server is running on port ${PORT}`);
+    console.log(`📊 Environment: ${process.env.NODE_ENV}`);
+
+    if (dbConnected) {
+      console.log(`🗄️ PostgreSQL + Sequelize Ready!`);
+    } else {
+      console.log(`⚠️ Running without database connection`);
+      console.log(`⚠️ Database-dependent endpoints will return 503 errors`);
+
+      // 개발 환경에서 DB 헬스체크 시작
+      if (process.env.NODE_ENV === "development") {
+        console.log(`🔄 Starting database health check (will retry every 30s)`);
+        startDBHealthCheck();
+      }
+    }
+
+    console.log(`📖 API Documentation: http://localhost:${PORT}/api-docs`);
+    console.log(`🔍 Health Check: http://localhost:${PORT}/api/health`);
+  });
 };
 
 startServer();
