@@ -16,13 +16,16 @@ import { specs } from "./config/swagger";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = parseInt(process.env.PORT || "8080", 10);
+const allowedOrigins = process.env.CORS_ORIGIN?.split(",") || [
+  "http://localhost:3000",
+];
 
 // 미들웨어 설정
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+    origin: allowedOrigins,
     credentials: true,
   })
 );
@@ -130,7 +133,7 @@ const startServer = async () => {
   }
 
   // 서버 시작
-  app.listen(PORT, () => {
+  app.listen(PORT, "0.0.0.0", () => {
     console.log(`🚀 Server is running on port ${PORT}`);
     console.log(`📊 Environment: ${process.env.NODE_ENV}`);
 
