@@ -1,5 +1,6 @@
 import { Sequelize } from "sequelize";
 import dotenv from "dotenv";
+import { DBStatus } from "../utils/dbStatus";
 
 dotenv.config();
 
@@ -13,8 +14,8 @@ const sequelize = new Sequelize({
   logging: process.env.NODE_ENV === "development" ? console.log : false,
   pool: {
     max: 10,
-    min: 2,
-    acquire: 30000,
+    min: 0,
+    acquire: 5000, // 5초로 단축
     idle: 10000,
   },
   dialectOptions:
@@ -25,13 +26,19 @@ const sequelize = new Sequelize({
             rejectUnauthorized: false,
           },
         }
-      : {},
+      : {
+          // 개발 환경에서 연결 타임아웃 설정
+          connectTimeout: 3000, // 3초
+        },
 });
 
-export const connectDB = async (): Promise<void> => {
+export const connectDB = async (): Promise<boolean> => {
   try {
     await sequelize.authenticate();
     console.log("✅ PostgreSQL connected successfully");
+
+    // TODO: 글로벌 DB 상태 업데이트 - 연결 성공
+    DBStatus.setConnected(true);
 
     // 데이터베이스 동기화 (개발 환경에서만)
     if (process.env.NODE_ENV === "development") {
@@ -40,8 +47,22 @@ export const connectDB = async (): Promise<void> => {
       await sequelize.sync({ alter: true });
       console.log("✅ Database synchronized");
     }
+    return true;
   } catch (error) {
     console.error("❌ Failed to connect to PostgreSQL:", error);
+
+    // TODO: 글로벌 DB 상태 업데이트 - 연결 실패
+    DBStatus.setConnected(false);
+
+    // 개발 환경에서는 DB 연결 실패해도 서버 계속 실행
+    if (process.env.NODE_ENV === "development") {
+      console.warn(
+        "⚠️ Running in development mode without database connection"
+      );
+      return false;
+    }
+
+    // 프로덕션 환경에서는 DB 연결 필수
     process.exit(1);
   }
 };
