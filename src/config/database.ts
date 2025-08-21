@@ -1,6 +1,8 @@
 import { Sequelize } from "sequelize";
 import dotenv from "dotenv";
 import { DBStatus } from "../utils/dbStatus";
+import User from "../models/User";
+import Lotto from "../models/Lotto";
 
 dotenv.config();
 
@@ -46,6 +48,9 @@ export const connectDB = async (): Promise<boolean> => {
       // alter: true로 설정하면 기존 데이터를 유지하면서 스키마만 업데이트
       await sequelize.sync({ alter: true });
       console.log("✅ Database synchronized");
+
+      // 모델들이 제대로 로드되었는지 확인
+      console.log("📋 Available models: User, Lotto");
     }
     return true;
   } catch (error) {

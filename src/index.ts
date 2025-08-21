@@ -8,6 +8,8 @@ import { errorHandler } from "./middleware/errorHandler";
 import { requireDB, optionalDB } from "./middleware/dbCheck";
 import { DBStatus } from "./utils/dbStatus";
 import lottoRoutes from "./routes/lottoRoutes";
+import userRoutes from "./routes/userRoutes";
+import { healthCheck } from "./controllers/healthController";
 
 import swaggerUi from "swagger-ui-express";
 import { specs } from "./config/swagger";
@@ -47,20 +49,7 @@ app.get("/", (req, res) => {
 });
 
 // 헬스 체크 엔드포인트 (DB 연결 없이도 동작)
-app.get("/api/health", optionalDB, (req, res) => {
-  const dbStatus = DBStatus.isConnected() ? "connected" : "disconnected";
-
-  res.json({
-    success: true,
-    message: "Server is healthy",
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV,
-    database: {
-      status: dbStatus,
-      type: "PostgreSQL + Sequelize",
-    },
-  });
-});
+app.get("/api/health", optionalDB, healthCheck);
 
 // DB 재연결 엔드포인트 (개발 환경에서만)
 app.post("/api/reconnect-db", async (req, res) => {
@@ -100,6 +89,9 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 // 로또 API 라우터 (DB 연결 필수)
 // TODO: 개별 라우트별로 requireDB 미들웨어 적용 여부 조정 가능
 app.use("/api/lotto", requireDB, lottoRoutes);
+
+// 사용자 API 라우터 (DB 연결 필수)
+app.use("/api/users", userRoutes);
 
 // 404 핸들러
 app.use("*", (req, res) => {
