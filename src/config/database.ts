@@ -2,7 +2,10 @@ import { Sequelize } from "sequelize";
 import dotenv from "dotenv";
 import { DBStatus } from "../utils/dbStatus";
 import User from "../models/User";
-import Lotto from "../models/Lotto";
+import Game from "../models/Game";
+import Theme from "../models/Theme";
+import UserProfile from "../models/UserProfile";
+import UserConfig from "../models/UserConfig";
 
 dotenv.config();
 
@@ -50,7 +53,9 @@ export const connectDB = async (): Promise<boolean> => {
       console.log("✅ Database synchronized");
 
       // 모델들이 제대로 로드되었는지 확인
-      console.log("📋 Available models: User, Lotto");
+      console.log(
+        "📋 Available models: User, Game, Theme, UserProfile, UserConfig"
+      );
     }
     return true;
   } catch (error) {

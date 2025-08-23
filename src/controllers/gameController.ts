@@ -1,14 +1,14 @@
 import { Request, Response } from "express";
-import Lotto from "../models/Lotto";
-import { parseLottoData } from "../utils/lottoParser";
+import Game from "../models/Game";
+import { parseGameData } from "../utils/gameParser";
 
 /**
  * @swagger
- * /api/lotto/upload:
+ * /api/game/upload:
  *   post:
  *     summary: 로또 데이터 업로드
  *     description: 탭으로 구분된 로또 데이터를 파싱하여 데이터베이스에 저장
- *     tags: [Lotto]
+ *     tags: [Game]
  *     requestBody:
  *       required: true
  *       content:
@@ -45,7 +45,7 @@ import { parseLottoData } from "../utils/lottoParser";
  *       500:
  *         description: 서버 오류
  */
-export const uploadLottoData = async (req: Request, res: Response) => {
+export const uploadGameData = async (req: Request, res: Response) => {
   try {
     const { data } = req.body;
 
@@ -57,7 +57,7 @@ export const uploadLottoData = async (req: Request, res: Response) => {
     }
 
     // 데이터 파싱
-    const parsedData = parseLottoData(data);
+    const parsedData = parseGameData(data);
 
     if (parsedData.length === 0) {
       return res.status(400).json({
@@ -70,33 +70,33 @@ export const uploadLottoData = async (req: Request, res: Response) => {
     const results = [];
     const errors = [];
 
-    for (const lottoData of parsedData) {
+    for (const gameData of parsedData) {
       try {
         // 기존 데이터가 있는지 확인
-        const existingLotto = await Lotto.findOne({
-          where: { round: lottoData.round },
+        const existingGame = await Game.findOne({
+          where: { round: gameData.round },
         });
 
-        if (existingLotto) {
+        if (existingGame) {
           // 기존 데이터 업데이트
-          await existingLotto.update(lottoData);
+          await existingGame.update(gameData);
           results.push({
-            round: lottoData.round,
+            round: gameData.round,
             status: "updated",
             message: "기존 데이터가 업데이트되었습니다.",
           });
         } else {
           // 새 데이터 생성
-          await Lotto.create(lottoData);
+          await Game.create(gameData);
           results.push({
-            round: lottoData.round,
+            round: gameData.round,
             status: "created",
             message: "새 데이터가 생성되었습니다.",
           });
         }
       } catch (error) {
         errors.push({
-          round: lottoData.round,
+          round: gameData.round,
           error: error instanceof Error ? error.message : "Unknown error",
         });
       }
@@ -105,13 +105,11 @@ export const uploadLottoData = async (req: Request, res: Response) => {
     return res.status(200).json({
       success: true,
       message: "로또 데이터 처리 완료",
-      data: {
-        total: parsedData.length,
-        success: results.length,
-        errorCount: errors.length,
-        results,
-        errors: errors.length > 0 ? errors : undefined,
-      },
+      total: parsedData.length,
+      successCount: results.length,
+      errorCount: errors.length,
+      results,
+      errors: errors.length > 0 ? errors : undefined,
     });
   } catch (error) {
     console.error("로또 데이터 업로드 오류:", error);
@@ -125,11 +123,11 @@ export const uploadLottoData = async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /api/lotto:
+ * /api/game:
  *   get:
  *     summary: 로또 데이터 조회
  *     description: 로또 데이터를 페이지네이션과 함께 조회하거나 전체 데이터를 조회
- *     tags: [Lotto]
+ *     tags: [Game]
  *     parameters:
  *       - in: query
  *         name: page
@@ -160,11 +158,11 @@ export const uploadLottoData = async (req: Request, res: Response) => {
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/LottoListResponse'
+ *               $ref: '#/components/schemas/GameListResponse'
  *       500:
  *         description: 서버 오류
  */
-export const getLottoData = async (req: Request, res: Response) => {
+export const getGameData = async (req: Request, res: Response) => {
   try {
     const { page = 1, limit = 10, round, all } = req.query;
 
@@ -175,23 +173,21 @@ export const getLottoData = async (req: Request, res: Response) => {
 
     // all 파라미터가 있으면 페이지네이션 없이 전체 데이터 조회
     if (all === "true" || all === "1") {
-      const rows = await Lotto.findAll({
+      const rows = await Game.findAll({
         where: whereClause,
         order: [["round", "DESC"]],
       });
 
       return res.status(200).json({
         success: true,
-        data: {
-          lottos: rows,
-          totalItems: rows.length,
-        },
+        games: rows,
+        totalItems: rows.length,
       });
     }
 
     // 기존 페이지네이션 로직
     const offset = (Number(page) - 1) * Number(limit);
-    const { count, rows } = await Lotto.findAndCountAll({
+    const { count, rows } = await Game.findAndCountAll({
       where: whereClause,
       order: [["round", "DESC"]],
       limit: Number(limit),
@@ -200,14 +196,12 @@ export const getLottoData = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       success: true,
-      data: {
-        lottos: rows,
-        pagination: {
-          currentPage: Number(page),
-          totalPages: Math.ceil(count / Number(limit)),
-          totalItems: count,
-          itemsPerPage: Number(limit),
-        },
+      games: rows,
+      pagination: {
+        currentPage: Number(page),
+        totalPages: Math.ceil(count / Number(limit)),
+        totalItems: count,
+        itemsPerPage: Number(limit),
       },
     });
   } catch (error) {
@@ -222,11 +216,11 @@ export const getLottoData = async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /api/lotto/{round}:
+ * /api/game/{round}:
  *   get:
  *     summary: 특정 회차 로또 데이터 조회
  *     description: 지정된 회차의 로또 데이터를 조회
- *     tags: [Lotto]
+ *     tags: [Game]
  *     parameters:
  *       - in: path
  *         name: round
@@ -246,7 +240,7 @@ export const getLottoData = async (req: Request, res: Response) => {
  *                 success:
  *                   type: boolean
  *                 data:
- *                   $ref: '#/components/schemas/Lotto'
+ *                   $ref: '#/components/schemas/Game'
  *       404:
  *         description: 해당 회차의 데이터를 찾을 수 없음
  *         content:
@@ -263,15 +257,15 @@ export const getLottoData = async (req: Request, res: Response) => {
  *       500:
  *         description: 서버 오류
  */
-export const getLottoByRound = async (req: Request, res: Response) => {
+export const getGameByRound = async (req: Request, res: Response) => {
   try {
     const { round } = req.params;
 
-    const lotto = await Lotto.findOne({
+    const game = await Game.findOne({
       where: { round: Number(round) },
     });
 
-    if (!lotto) {
+    if (!game) {
       return res.status(404).json({
         success: false,
         message: "해당 회차의 로또 데이터를 찾을 수 없습니다.",
@@ -280,7 +274,7 @@ export const getLottoByRound = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       success: true,
-      data: lotto,
+      data: game,
     });
   } catch (error) {
     console.error("로또 데이터 조회 오류:", error);

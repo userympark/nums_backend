@@ -8,7 +8,7 @@ async function testUpload() {
     console.log("🔄 로또 데이터 업로드 테스트 시작...");
 
     const response = await axios.post(
-      "http://localhost:8080/api/lotto/upload",
+      "http://localhost:8080/api/game/upload",
       {
         data: testData,
       },
@@ -24,7 +24,7 @@ async function testUpload() {
 
     // 업로드 후 데이터 조회 테스트
     console.log("\n🔄 업로드된 데이터 조회 테스트...");
-    const getResponse = await axios.get("http://localhost:8080/api/lotto");
+    const getResponse = await axios.get("http://localhost:8080/api/game");
     console.log("✅ 조회 성공!");
     console.log("조회 결과:", JSON.stringify(getResponse.data, null, 2));
   } catch (error) {
@@ -42,21 +42,24 @@ async function testUpload() {
 async function testGetByRound() {
   try {
     console.log("\n🔄 특정 회차 조회 테스트...");
-    const response = await axios.get("http://localhost:8080/api/lotto/600");
+    const response = await axios.get("http://localhost:8080/api/game/600");
     console.log("✅ 특정 회차 조회 성공!");
     console.log("조회 결과:", JSON.stringify(response.data, null, 2));
   } catch (error) {
-    console.error("❌ 특정 회차 조회 오류:", error.response?.data || error.message);
+    console.error(
+      "❌ 특정 회차 조회 오류:",
+      error.response?.data || error.message
+    );
   }
 }
 
 // 메인 테스트 함수
 async function runTests() {
   console.log("🚀 API 테스트 시작\n");
-  
+
   await testUpload();
   await testGetByRound();
-  
+
   console.log("\n✨ 모든 테스트 완료!");
 }
 

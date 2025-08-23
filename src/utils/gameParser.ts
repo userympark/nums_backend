@@ -1,23 +1,23 @@
-interface ParsedLottoData {
+interface ParsedGameData {
   round: number;
-  drawDate: Date;
-  firstPrizeWinners: number;
-  firstPrizeAmount: number;
-  secondPrizeWinners: number;
-  secondPrizeAmount: number;
-  thirdPrizeWinners: number;
-  thirdPrizeAmount: number;
-  fourthPrizeWinners: number;
-  fourthPrizeAmount: number;
-  fifthPrizeWinners: number;
-  fifthPrizeAmount: number;
+  draw_date: Date;
+  first_prize_winners: number;
+  first_prize_amount: number;
+  second_prize_winners: number;
+  second_prize_amount: number;
+  third_prize_winners: number;
+  third_prize_amount: number;
+  fourth_prize_winners: number;
+  fourth_prize_amount: number;
+  fifth_prize_winners: number;
+  fifth_prize_amount: number;
   number1: number;
   number2: number;
   number3: number;
   number4: number;
   number5: number;
   number6: number;
-  bonusNumber: number;
+  bonus_number: number;
 }
 
 /**
@@ -45,7 +45,7 @@ const parseDate = (dateStr: string): Date => {
 /**
  * 로또 데이터 행을 파싱
  */
-export const parseLottoRow = (row: string): ParsedLottoData => {
+export const parseGameRow = (row: string): ParsedGameData => {
   const columns = row.split("\t");
 
   if (columns.length !== 19) {
@@ -56,35 +56,35 @@ export const parseLottoRow = (row: string): ParsedLottoData => {
 
   return {
     round: parseInt(columns[0], 10),
-    drawDate: parseDate(columns[1]),
-    firstPrizeWinners: parseNumber(columns[2]),
-    firstPrizeAmount: parseAmount(columns[3]),
-    secondPrizeWinners: parseNumber(columns[4]),
-    secondPrizeAmount: parseAmount(columns[5]),
-    thirdPrizeWinners: parseNumber(columns[6]),
-    thirdPrizeAmount: parseAmount(columns[7]),
-    fourthPrizeWinners: parseNumber(columns[8]),
-    fourthPrizeAmount: parseAmount(columns[9]),
-    fifthPrizeWinners: parseNumber(columns[10]),
-    fifthPrizeAmount: parseAmount(columns[11]),
+    draw_date: parseDate(columns[1]),
+    first_prize_winners: parseNumber(columns[2]),
+    first_prize_amount: parseAmount(columns[3]),
+    second_prize_winners: parseNumber(columns[4]),
+    second_prize_amount: parseAmount(columns[5]),
+    third_prize_winners: parseNumber(columns[6]),
+    third_prize_amount: parseAmount(columns[7]),
+    fourth_prize_winners: parseNumber(columns[8]),
+    fourth_prize_amount: parseAmount(columns[9]),
+    fifth_prize_winners: parseNumber(columns[10]),
+    fifth_prize_amount: parseAmount(columns[11]),
     number1: parseInt(columns[12], 10),
     number2: parseInt(columns[13], 10),
     number3: parseInt(columns[14], 10),
     number4: parseInt(columns[15], 10),
     number5: parseInt(columns[16], 10),
     number6: parseInt(columns[17], 10),
-    bonusNumber: parseInt(columns[18], 10),
+    bonus_number: parseInt(columns[18], 10),
   };
 };
 
 /**
  * 여러 행의 로또 데이터를 파싱
  */
-export const parseLottoData = (data: string): ParsedLottoData[] => {
+export const parseGameData = (data: string): ParsedGameData[] => {
   const rows = data.trim().split("\n");
   return rows.map((row, index) => {
     try {
-      return parseLottoRow(row);
+      return parseGameRow(row);
     } catch (error) {
       throw new Error(`Error parsing row ${index + 1}: ${error}`);
     }

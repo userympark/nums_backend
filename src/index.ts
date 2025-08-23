@@ -7,8 +7,11 @@ import { connectDB, startDBHealthCheck, reconnectDB } from "./config/database";
 import { errorHandler } from "./middleware/errorHandler";
 import { requireDB, optionalDB } from "./middleware/dbCheck";
 import { DBStatus } from "./utils/dbStatus";
-import lottoRoutes from "./routes/lottoRoutes";
+import gameRoutes from "./routes/gameRoutes";
 import userRoutes from "./routes/userRoutes";
+import userProfileRoutes from "./routes/userProfileRoutes";
+import userConfigRoutes from "./routes/userConfigRoutes";
+import adminRoutes from "./routes/adminRoutes";
 import { healthCheck } from "./controllers/healthController";
 
 import swaggerUi from "swagger-ui-express";
@@ -88,10 +91,19 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
 // 로또 API 라우터 (DB 연결 필수)
 // TODO: 개별 라우트별로 requireDB 미들웨어 적용 여부 조정 가능
-app.use("/api/lotto", requireDB, lottoRoutes);
+app.use("/api/game", requireDB, gameRoutes);
 
 // 사용자 API 라우터 (DB 연결 필수)
 app.use("/api/users", userRoutes);
+
+// 사용자 프로필 API 라우터 (DB 연결 필수, 인증 필요)
+app.use("/api/user-profiles", userProfileRoutes);
+
+// 사용자 설정 API 라우터 (DB 연결 필수, 인증 필요)
+app.use("/api/user-configs", userConfigRoutes);
+
+// 관리자 API 라우터 (DB 연결 필수, 인증 및 관리자 권한 필요)
+app.use("/api/admin", adminRoutes);
 
 // 404 핸들러
 app.use("*", (req, res) => {
