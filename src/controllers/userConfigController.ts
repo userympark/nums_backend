@@ -5,21 +5,13 @@ import Theme from "../models/Theme";
 
 /**
  * @swagger
- * /api/user-configs/{user_id}:
+ * /api/users/me/configs:
  *   get:
  *     summary: 사용자 설정 조회
- *     description: 특정 사용자의 설정 정보를 조회합니다.
- *     tags: [UserConfigs]
+ *     description: 현재 로그인한 사용자의 설정 정보를 조회합니다.
+ *     tags: [Users]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: user_id
- *         required: true
- *         schema:
- *           type: integer
- *         description: 사용자 고유 ID
- *         example: 1
  *     responses:
  *       200:
  *         description: 설정 조회 성공
@@ -50,7 +42,15 @@ import Theme from "../models/Theme";
 // 사용자 설정 조회
 export const getUserConfig = async (req: Request, res: Response) => {
   try {
-    const { user_id } = req.params;
+    const user_id = req.user?.user_id;
+    if (!user_id) {
+      return res.status(401).json({
+        success: false,
+        message: "인증되지 않은 사용자입니다.",
+        errorCode: "UNAUTHORIZED",
+      });
+    }
+
     const config = await UserConfig.findByPk(user_id, {
       include: [
         {
@@ -91,11 +91,11 @@ export const getUserConfig = async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /api/user-configs:
+ * /api/users/me/configs:
  *   post:
  *     summary: 사용자 설정 생성
- *     description: 새로운 사용자 설정을 생성합니다.
- *     tags: [UserConfigs]
+ *     description: 현재 로그인한 사용자의 설정을 생성합니다.
+ *     tags: [Users]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -105,13 +105,8 @@ export const getUserConfig = async (req: Request, res: Response) => {
  *           schema:
  *             type: object
  *             required:
- *               - user_id
  *               - active_theme
  *             properties:
- *               user_id:
- *                 type: integer
- *                 description: 사용자 고유 ID
- *                 example: 1
  *               active_theme:
  *                 type: integer
  *                 description: 마지막 사용 테마 ID
@@ -155,13 +150,22 @@ export const getUserConfig = async (req: Request, res: Response) => {
 // 사용자 설정 생성
 export const createUserConfig = async (req: Request, res: Response) => {
   try {
-    const { user_id, active_theme } = req.body;
+    const user_id = req.user?.user_id;
+    if (!user_id) {
+      return res.status(401).json({
+        success: false,
+        message: "인증되지 않은 사용자입니다.",
+        errorCode: "UNAUTHORIZED",
+      });
+    }
+
+    const { active_theme } = req.body;
 
     // 입력값 검증
-    if (!user_id || !active_theme) {
+    if (!active_theme) {
       return res.status(400).json({
         success: false,
-        message: "사용자 ID와 테마 ID를 모두 입력해주세요.",
+        message: "테마 ID를 입력해주세요.",
         errorCode: "MISSING_REQUIRED_FIELDS",
       });
     }
@@ -220,21 +224,13 @@ export const createUserConfig = async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /api/user-configs/{user_id}:
+ * /api/users/me/configs:
  *   put:
  *     summary: 사용자 설정 수정
- *     description: 기존 사용자 설정을 수정합니다.
- *     tags: [UserConfigs]
+ *     description: 현재 로그인한 사용자의 설정을 수정합니다.
+ *     tags: [Users]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: user_id
- *         required: true
- *         schema:
- *           type: integer
- *         description: 사용자 고유 ID
- *         example: 1
  *     requestBody:
  *       required: true
  *       content:
@@ -281,7 +277,15 @@ export const createUserConfig = async (req: Request, res: Response) => {
 // 사용자 설정 수정
 export const updateUserConfig = async (req: Request, res: Response) => {
   try {
-    const { user_id } = req.params;
+    const user_id = req.user?.user_id;
+    if (!user_id) {
+      return res.status(401).json({
+        success: false,
+        message: "인증되지 않은 사용자입니다.",
+        errorCode: "UNAUTHORIZED",
+      });
+    }
+
     const { active_theme } = req.body;
 
     // 설정 존재 확인
@@ -329,21 +333,13 @@ export const updateUserConfig = async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /api/user-configs/{user_id}:
+ * /api/users/me/configs:
  *   delete:
  *     summary: 사용자 설정 삭제
- *     description: 사용자 설정을 삭제합니다.
- *     tags: [UserConfigs]
+ *     description: 현재 로그인한 사용자의 설정을 삭제합니다.
+ *     tags: [Users]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: user_id
- *         required: true
- *         schema:
- *           type: integer
- *         description: 사용자 고유 ID
- *         example: 1
  *     responses:
  *       200:
  *         description: 설정 삭제 성공
@@ -375,7 +371,14 @@ export const updateUserConfig = async (req: Request, res: Response) => {
 // 사용자 설정 삭제
 export const deleteUserConfig = async (req: Request, res: Response) => {
   try {
-    const { user_id } = req.params;
+    const user_id = req.user?.user_id;
+    if (!user_id) {
+      return res.status(401).json({
+        success: false,
+        message: "인증되지 않은 사용자입니다.",
+        errorCode: "UNAUTHORIZED",
+      });
+    }
 
     // 설정 존재 확인
     const config = await UserConfig.findByPk(user_id);

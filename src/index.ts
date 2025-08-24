@@ -100,7 +100,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/user-profiles", userProfileRoutes);
 
 // 사용자 설정 API 라우터 (DB 연결 필수, 인증 필요)
-app.use("/api/user-configs", userConfigRoutes);
+app.use("/api/users/me/configs", userConfigRoutes);
 
 // 관리자 API 라우터 (DB 연결 필수, 인증 및 관리자 권한 필요)
 app.use("/api/admin", adminRoutes);
