@@ -5,7 +5,7 @@ import Theme from "../models/Theme";
 
 /**
  * @swagger
- * /api/admin/users/{user_id}:
+ * /api/admins/users/{user_id}:
  *   get:
  *     summary: 특정 사용자 정보 조회 (관리자용)
  *     description: 관리자 권한으로 특정 사용자의 정보를 조회합니다.
@@ -90,7 +90,7 @@ export const getAdminUserById = async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /api/admin/users:
+ * /api/admins/users:
  *   get:
  *     summary: 전체 사용자 목록 조회 (관리자용)
  *     description: 관리자 권한으로 모든 사용자 목록을 조회합니다.
@@ -154,7 +154,7 @@ export const getAdminUsers = async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /api/admin/users/{user_id}:
+ * /api/admins/users/{user_id}:
  *   put:
  *     summary: 사용자 정보 수정 (관리자용)
  *     description: 관리자 권한으로 특정 사용자의 정보를 수정합니다.
@@ -255,7 +255,7 @@ export const updateAdminUser = async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /api/admin/users/{user_id}:
+ * /api/admins/users/{user_id}:
  *   delete:
  *     summary: 사용자 계정 삭제 (관리자용)
  *     description: 관리자 권한으로 특정 사용자 계정을 삭제합니다.
@@ -329,7 +329,7 @@ export const deleteAdminUser = async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /api/admin/themes:
+ * /api/admins/themes:
  *   get:
  *     summary: 전체 테마 목록 조회 (관리자용)
  *     description: 관리자 권한으로 모든 테마 목록을 조회합니다.
@@ -381,7 +381,7 @@ export const getAdminThemes = async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /api/admin/themes:
+ * /api/admins/themes:
  *   post:
  *     summary: 새 테마 생성 (관리자용)
  *     description: 관리자 권한으로 새로운 테마를 생성합니다.
@@ -499,7 +499,7 @@ export const createAdminTheme = async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /api/admin/themes/{theme_id}:
+ * /api/admins/themes/{theme_id}:
  *   get:
  *     summary: 특정 테마 조회 (관리자용)
  *     description: 관리자 권한으로 특정 테마 정보를 조회합니다.
@@ -567,7 +567,7 @@ export const getAdminThemeById = async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /api/admin/themes/{theme_id}:
+ * /api/admins/themes/{theme_id}:
  *   put:
  *     summary: 테마 정보 수정 (관리자용)
  *     description: 관리자 권한으로 특정 테마 정보를 수정합니다.
@@ -691,7 +691,7 @@ export const updateAdminTheme = async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /api/admin/themes/{theme_id}:
+ * /api/admins/themes/{theme_id}:
  *   delete:
  *     summary: 테마 삭제 (관리자용)
  *     description: 관리자 권한으로 특정 테마를 삭제합니다.

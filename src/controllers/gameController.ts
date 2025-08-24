@@ -4,7 +4,7 @@ import { parseGameData } from "../utils/gameParser";
 
 /**
  * @swagger
- * /api/game/upload:
+ * /api/games/upload:
  *   post:
  *     summary: 로또 데이터 업로드
  *     description: 탭으로 구분된 로또 데이터를 파싱하여 데이터베이스에 저장
@@ -123,7 +123,7 @@ export const uploadGameData = async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /api/game:
+ * /api/games:
  *   get:
  *     summary: 로또 데이터 조회
  *     description: 로또 데이터를 페이지네이션과 함께 조회하거나 전체 데이터를 조회
@@ -216,7 +216,7 @@ export const getGameData = async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /api/game/{round}:
+ * /api/games/{round}:
  *   get:
  *     summary: 특정 회차 로또 데이터 조회
  *     description: 지정된 회차의 로또 데이터를 조회
