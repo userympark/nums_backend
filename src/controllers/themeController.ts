@@ -53,3 +53,4 @@ export const getAllThemes = async (req: Request, res: Response) => {
     });
   }
 };
+

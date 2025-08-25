@@ -8,3 +8,4 @@ const router = Router();
 router.get("/", requireDB, getAllThemes);
 
 export default router;
+

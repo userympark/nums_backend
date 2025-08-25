@@ -3,6 +3,7 @@ import * as bcrypt from "bcryptjs";
 import * as jwt from "jsonwebtoken";
 import User from "../models/User";
 import UserProfile from "../models/UserProfile";
+import UserConfig from "../models/UserConfig";
 
 /**
  * @swagger
@@ -432,7 +433,7 @@ export const login = async (req: Request, res: Response) => {
  * /api/users/me:
  *   get:
  *     summary: 본인 정보 조회
- *     description: JWT 토큰을 통해 본인의 사용자 정보와 프로필 정보를 조회합니다.
+ *     description: JWT 토큰을 통해 본인의 프로필 정보와 활성 테마를 조회합니다.
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
@@ -447,10 +448,13 @@ export const login = async (req: Request, res: Response) => {
  *                 success:
  *                   type: boolean
  *                   example: true
- *                 user:
- *                   $ref: '#/components/schemas/User'
  *                 profile:
  *                   $ref: '#/components/schemas/UserProfile'
+ *                 activeTheme:
+ *                   type: integer
+ *                   nullable: true
+ *                   description: 활성 테마 ID (없으면 null)
+ *                   example: 1
  *       401:
  *         description: 인증 필요
  *         content:
@@ -485,34 +489,31 @@ export const getMe = async (req: Request, res: Response) => {
       });
     }
 
-    // 사용자 정보 조회 (비밀번호 제외)
-    const user = await User.findByPk(user_id, {
-      attributes: { exclude: ["password"] },
-    });
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "사용자를 찾을 수 없습니다.",
-        errorCode: "USER_NOT_FOUND",
-      });
-    }
-
     // 사용자 프로필 정보 조회
     const profile = await UserProfile.findOne({
       where: { user_id },
     });
 
+    if (!profile) {
+      return res.status(404).json({
+        success: false,
+        message: "사용자 프로필을 찾을 수 없습니다.",
+        errorCode: "USER_PROFILE_NOT_FOUND",
+      });
+    }
+
+    // 사용자 설정에서 활성 테마 조회
+    const userConfig = await UserConfig.findOne({
+      where: { user_id },
+      attributes: ["active_theme"],
+    });
+
     // 응답 데이터 구성
     const responseData: any = {
       success: true,
-      user,
+      profile,
+      activeTheme: userConfig?.active_theme || null,
     };
-
-    // 프로필이 있으면 추가
-    if (profile) {
-      responseData.profile = profile;
-    }
 
     res.json(responseData);
   } catch (error) {

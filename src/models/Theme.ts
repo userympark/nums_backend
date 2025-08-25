@@ -21,6 +21,7 @@ interface ThemeAttributes {
     "on-background": string;
     "on-surface": string;
   };
+  variables?: any; // JSON 타입, nullable
   is_default: boolean;
   createdAt?: Date;
   updatedAt?: Date;
@@ -52,6 +53,7 @@ class Theme
     "on-background": string;
     "on-surface": string;
   };
+  public variables?: any; // JSON 타입, nullable
   public is_default!: boolean;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -124,6 +126,10 @@ Theme.init(
           }
         },
       },
+    },
+    variables: {
+      type: DataTypes.JSON,
+      allowNull: true, // nullable
     },
     is_default: {
       type: DataTypes.BOOLEAN,

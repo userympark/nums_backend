@@ -210,6 +210,16 @@ const options = {
                 },
               },
             },
+            variables: {
+              type: "object",
+              nullable: true,
+              description: "테마별 추가 변수 (JSON)",
+              example: {
+                "border-radius": "8px",
+                "font-size": "14px",
+                "custom-setting": "value",
+              },
+            },
             is_default: {
               type: "boolean",
               description: "기본 테마 여부",

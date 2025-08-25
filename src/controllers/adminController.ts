@@ -412,6 +412,11 @@ export const getAdminThemes = async (req: Request, res: Response) => {
  *                 type: object
  *                 description: Vuetify 컬러셋
  *                 example: {"primary": "#1976D2", "secondary": "#424242"}
+ *               variables:
+ *                 type: object
+ *                 nullable: true
+ *                 description: 테마별 추가 변수 (JSON)
+ *                 example: {"border-radius": "8px", "font-size": "14px"}
  *               is_default:
  *                 type: boolean
  *                 description: 기본 테마 여부
@@ -443,7 +448,7 @@ export const getAdminThemes = async (req: Request, res: Response) => {
 // 새 테마 생성 (관리자용)
 export const createAdminTheme = async (req: Request, res: Response) => {
   try {
-    const { name, mode, colors, is_default = false } = req.body;
+    const { name, mode, colors, variables, is_default = false } = req.body;
 
     // 입력값 검증
     if (!name || !mode || !colors) {
@@ -478,6 +483,7 @@ export const createAdminTheme = async (req: Request, res: Response) => {
       name,
       mode,
       colors,
+      variables,
       is_default,
     });
 
@@ -601,6 +607,11 @@ export const getAdminThemeById = async (req: Request, res: Response) => {
  *               colors:
  *                 type: object
  *                 description: 새로운 Vuetify 컬러셋
+ *               variables:
+ *                 type: object
+ *                 nullable: true
+ *                 description: 테마별 추가 변수 (JSON)
+ *                 example: {"border-radius": "8px", "font-size": "14px"}
  *               is_default:
  *                 type: boolean
  *                 description: 기본 테마 여부
@@ -633,7 +644,7 @@ export const getAdminThemeById = async (req: Request, res: Response) => {
 export const updateAdminTheme = async (req: Request, res: Response) => {
   try {
     const { theme_id } = req.params;
-    const { name, mode, colors, is_default } = req.body;
+    const { name, mode, colors, variables, is_default } = req.body;
 
     const theme = await Theme.findByPk(theme_id);
     if (!theme) {
@@ -670,6 +681,7 @@ export const updateAdminTheme = async (req: Request, res: Response) => {
       name: name || theme.name,
       mode: mode || theme.mode,
       colors: colors || theme.colors,
+      variables: variables !== undefined ? variables : theme.variables,
       is_default: is_default !== undefined ? is_default : theme.is_default,
     });
 
