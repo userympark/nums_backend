@@ -10,6 +10,7 @@ import {
   getAdminThemeById,
   updateAdminTheme,
   deleteAdminTheme,
+  getRecentGameStatus,
 } from "../controllers/adminController";
 
 const router = Router();
@@ -30,5 +31,8 @@ router.post("/themes", createAdminTheme); // 새 테마 생성
 router.get("/themes/:theme_id", getAdminThemeById); // 특정 테마 조회
 router.put("/themes/:theme_id", updateAdminTheme); // 테마 정보 수정
 router.delete("/themes/:theme_id", deleteAdminTheme); // 테마 삭제
+
+// 게임 최신 반영 상태
+router.get("/games/recent-status", getRecentGameStatus);
 
 export default router;

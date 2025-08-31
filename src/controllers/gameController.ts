@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
-import Game from "../models/Game";
-import { parseGameData } from "../utils/gameParser";
+import { listGamesService, uploadGameDataService, getGameByRoundService, getRecentGameService } from "../services/gameService";
 
 /**
  * @swagger
@@ -34,89 +33,26 @@ import { parseGameData } from "../utils/gameParser";
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
- *                 message:
- *                   type: string
- *                   example: "데이터가 필요합니다. 문자열 형태로 전달해주세요."
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       500:
  *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 export const uploadGameData = async (req: Request, res: Response) => {
   try {
     const { data } = req.body;
-
-    if (!data || typeof data !== "string") {
-      return res.status(400).json({
-        success: false,
-        message: "데이터가 필요합니다. 문자열 형태로 전달해주세요.",
-      });
-    }
-
-    // 데이터 파싱
-    const parsedData = parseGameData(data);
-
-    if (parsedData.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "파싱할 수 있는 데이터가 없습니다.",
-      });
-    }
-
-    // 데이터베이스에 저장
-    const results = [];
-    const errors = [];
-
-    for (const gameData of parsedData) {
-      try {
-        // 기존 데이터가 있는지 확인
-        const existingGame = await Game.findOne({
-          where: { round: gameData.round },
-        });
-
-        if (existingGame) {
-          // 기존 데이터 업데이트
-          await existingGame.update(gameData);
-          results.push({
-            round: gameData.round,
-            status: "updated",
-            message: "기존 데이터가 업데이트되었습니다.",
-          });
-        } else {
-          // 새 데이터 생성
-          await Game.create(gameData);
-          results.push({
-            round: gameData.round,
-            status: "created",
-            message: "새 데이터가 생성되었습니다.",
-          });
-        }
-      } catch (error) {
-        errors.push({
-          round: gameData.round,
-          error: error instanceof Error ? error.message : "Unknown error",
-        });
-      }
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "로또 데이터 처리 완료",
-      total: parsedData.length,
-      successCount: results.length,
-      errorCount: errors.length,
-      results,
-      errors: errors.length > 0 ? errors : undefined,
-    });
-  } catch (error) {
-    console.error("로또 데이터 업로드 오류:", error);
-    return res.status(500).json({
+    const result = await uploadGameDataService(data);
+    return res.status(200).json({ success: true, message: "로또 데이터 처리 완료", ...result });
+  } catch (error: any) {
+    const status = error?.statusCode || 500;
+    const code = error?.errorCode || "INTERNAL_SERVER_ERROR";
+    return res.status(status).json({
       success: false,
-      message: "서버 오류가 발생했습니다.",
-      error: error instanceof Error ? error.message : "Unknown error",
+      message: error instanceof Error ? error.message : "Unknown error",
+      errorCode: code,
     });
   }
 };
@@ -161,55 +97,25 @@ export const uploadGameData = async (req: Request, res: Response) => {
  *               $ref: '#/components/schemas/GameListResponse'
  *       500:
  *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 export const getGameData = async (req: Request, res: Response) => {
   try {
-    const { page = 1, limit = 10, round, all } = req.query;
-
-    let whereClause = {};
-    if (round) {
-      whereClause = { round: Number(round) };
+    const data = await listGamesService(req.query as any);
+    if (data.mode === "all") {
+      return res.status(200).json({ success: true, games: data.games, totalItems: data.totalItems });
     }
-
-    // all 파라미터가 있으면 페이지네이션 없이 전체 데이터 조회
-    if (all === "true" || all === "1") {
-      const rows = await Game.findAll({
-        where: whereClause,
-        order: [["round", "DESC"]],
-      });
-
-      return res.status(200).json({
-        success: true,
-        games: rows,
-        totalItems: rows.length,
-      });
-    }
-
-    // 기존 페이지네이션 로직
-    const offset = (Number(page) - 1) * Number(limit);
-    const { count, rows } = await Game.findAndCountAll({
-      where: whereClause,
-      order: [["round", "DESC"]],
-      limit: Number(limit),
-      offset: offset,
-    });
-
-    return res.status(200).json({
-      success: true,
-      games: rows,
-      pagination: {
-        currentPage: Number(page),
-        totalPages: Math.ceil(count / Number(limit)),
-        totalItems: count,
-        itemsPerPage: Number(limit),
-      },
-    });
-  } catch (error) {
-    console.error("로또 데이터 조회 오류:", error);
-    return res.status(500).json({
+    return res.status(200).json({ success: true, games: data.games, pagination: data.pagination });
+  } catch (error: any) {
+    const status = error?.statusCode || 500;
+    const code = error?.errorCode || "INTERNAL_SERVER_ERROR";
+    return res.status(status).json({
       success: false,
-      message: "서버 오류가 발생했습니다.",
-      error: error instanceof Error ? error.message : "Unknown error",
+      message: error instanceof Error ? error.message : "Unknown error",
+      errorCode: code,
     });
   }
 };
@@ -246,42 +152,73 @@ export const getGameData = async (req: Request, res: Response) => {
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
- *                 message:
- *                   type: string
- *                   example: "해당 회차의 로또 데이터를 찾을 수 없습니다."
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       500:
  *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 export const getGameByRound = async (req: Request, res: Response) => {
   try {
     const { round } = req.params;
-
-    const game = await Game.findOne({
-      where: { round: Number(round) },
-    });
-
-    if (!game) {
-      return res.status(404).json({
-        success: false,
-        message: "해당 회차의 로또 데이터를 찾을 수 없습니다.",
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      data: game,
-    });
-  } catch (error) {
-    console.error("로또 데이터 조회 오류:", error);
-    return res.status(500).json({
+    const game = await getGameByRoundService(round);
+    return res.status(200).json({ success: true, data: game });
+  } catch (error: any) {
+    const status = error?.statusCode || 500;
+    const code = error?.errorCode || "INTERNAL_SERVER_ERROR";
+    return res.status(status).json({
       success: false,
-      message: "서버 오류가 발생했습니다.",
-      error: error instanceof Error ? error.message : "Unknown error",
+      message: error instanceof Error ? error.message : "Unknown error",
+      errorCode: code,
+    });
+  }
+};
+
+/**
+ * @swagger
+ * /api/games/recent:
+ *   get:
+ *     summary: 가장 최근(최대 회차) 로또 데이터 조회
+ *     description: round 값이 가장 큰 최근 게임 정보를 반환합니다.
+ *     tags: [Game]
+ *     responses:
+ *       200:
+ *         description: 최근 로또 데이터 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/Game'
+ *       404:
+ *         description: 데이터 없음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+export const getRecentGame = async (_req: Request, res: Response) => {
+  try {
+    const game = await getRecentGameService();
+    return res.status(200).json({ success: true, data: game });
+  } catch (error: any) {
+    const status = error?.statusCode || 500;
+    const code = error?.errorCode || "INTERNAL_SERVER_ERROR";
+    return res.status(status).json({
+      success: false,
+      message: error instanceof Error ? error.message : "Unknown error",
+      errorCode: code,
     });
   }
 };

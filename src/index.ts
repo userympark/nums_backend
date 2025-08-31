@@ -3,7 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import dotenv from "dotenv";
-import { connectDB, startDBHealthCheck, reconnectDB } from "./config/database";
+import { connectDB, startDBHealthCheck } from "./config/database";
 import { errorHandler } from "./middleware/errorHandler";
 import { requireDB, optionalDB } from "./middleware/dbCheck";
 import { DBStatus } from "./utils/dbStatus";
@@ -55,37 +55,6 @@ app.get("/", (req, res) => {
 // 헬스 체크 엔드포인트 (DB 연결 없이도 동작)
 app.get("/api/health", optionalDB, healthCheck);
 
-// DB 재연결 엔드포인트 (개발 환경에서만)
-app.post("/api/reconnect-db", async (req, res) => {
-  if (process.env.NODE_ENV !== "development") {
-    return res.status(403).json({
-      success: false,
-      message: "Database reconnection is only available in development mode",
-    });
-  }
-
-  try {
-    const reconnected = await reconnectDB();
-
-    return res.json({
-      success: true,
-      message: reconnected
-        ? "Database reconnected successfully"
-        : "Database connection failed",
-      database: {
-        status: reconnected ? "connected" : "disconnected",
-        timestamp: new Date().toISOString(),
-      },
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to reconnect to database",
-      error: error instanceof Error ? error.message : "Unknown error",
-      timestamp: new Date().toISOString(),
-    });
-  }
-});
 
 // Swagger UI
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
@@ -98,7 +67,10 @@ app.use("/api/games", requireDB, gameRoutes);
 app.use("/api/users", userRoutes);
 
 // 사용자 프로필 API 라우터 (DB 연결 필수, 인증 필요)
+// Deprecated: keep compatibility, but prefer /api/users/me/profile
 app.use("/api/user-profiles", userProfileRoutes);
+// New preferred route for profile under authenticated user namespace
+app.use("/api/users/me/profile", userProfileRoutes);
 
 // 사용자 설정 API 라우터 (DB 연결 필수, 인증 필요)
 app.use("/api/users/me/configs", userConfigRoutes);

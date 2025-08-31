@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import Theme from "../models/Theme";
+import { listAllThemesService } from "../services/themeService";
 
 /**
  * @swagger
@@ -34,10 +34,7 @@ import Theme from "../models/Theme";
 // 모든 테마 정보 조회 (Public API)
 export const getAllThemes = async (req: Request, res: Response) => {
   try {
-    // themes 테이블의 모든 정보 조회
-    const themes = await Theme.findAll({
-      order: [["theme_id", "ASC"]],
-    });
+    const themes = await listAllThemesService();
 
     res.json({
       success: true,

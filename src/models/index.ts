@@ -1,4 +1,4 @@
-import { sequelize } from "../config/database";
+import sequelize from "../config/database";
 import Game from "./Game";
 import User from "./User";
 import Theme from "./Theme";

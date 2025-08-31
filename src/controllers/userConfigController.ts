@@ -1,7 +1,5 @@
 import { Request, Response } from "express";
-import UserConfig from "../models/UserConfig";
-import User from "../models/User";
-import Theme from "../models/Theme";
+import { getUserConfigForUser, createUserConfigForUser, updateUserConfigForUser, deleteUserConfigForUser } from "../services/userConfigService";
 
 /**
  * @swagger
@@ -51,33 +49,8 @@ export const getUserConfig = async (req: Request, res: Response) => {
       });
     }
 
-    const config = await UserConfig.findByPk(user_id, {
-      include: [
-        {
-          model: User,
-          as: "user",
-          attributes: ["user_id", "username"],
-        },
-        {
-          model: Theme,
-          as: "theme",
-          attributes: ["theme_id", "name", "mode", "colors"],
-        },
-      ],
-    });
-
-    if (!config) {
-      return res.status(404).json({
-        success: false,
-        message: "사용자 설정을 찾을 수 없습니다.",
-        errorCode: "USER_CONFIG_NOT_FOUND",
-      });
-    }
-
-    res.json({
-      success: true,
-      config,
-    });
+    const config = await getUserConfigForUser(user_id);
+    return res.json({ success: true, config });
   } catch (error) {
     console.error("사용자 설정 조회 오류:", error);
     res.status(500).json({
@@ -160,57 +133,8 @@ export const createUserConfig = async (req: Request, res: Response) => {
     }
 
     const { active_theme } = req.body;
-
-    // 입력값 검증
-    if (!active_theme) {
-      return res.status(400).json({
-        success: false,
-        message: "테마 ID를 입력해주세요.",
-        errorCode: "MISSING_REQUIRED_FIELDS",
-      });
-    }
-
-    // 사용자 존재 확인
-    const user = await User.findByPk(user_id);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "해당 사용자를 찾을 수 없습니다.",
-        errorCode: "USER_NOT_FOUND",
-      });
-    }
-
-    // 테마 존재 확인
-    const theme = await Theme.findByPk(active_theme);
-    if (!theme) {
-      return res.status(404).json({
-        success: false,
-        message: "해당 테마를 찾을 수 없습니다.",
-        errorCode: "THEME_NOT_FOUND",
-      });
-    }
-
-    // 설정 이미 존재하는지 확인
-    const existingConfig = await UserConfig.findByPk(user_id);
-    if (existingConfig) {
-      return res.status(409).json({
-        success: false,
-        message: "해당 사용자의 설정이 이미 존재합니다.",
-        errorCode: "USER_CONFIG_ALREADY_EXISTS",
-      });
-    }
-
-    // 새 설정 생성
-    const newConfig = await UserConfig.create({
-      user_id,
-      active_theme,
-    });
-
-    res.status(201).json({
-      success: true,
-      message: "사용자 설정이 생성되었습니다.",
-      config: newConfig,
-    });
+    const config = await createUserConfigForUser(user_id, active_theme);
+    return res.status(201).json({ success: true, message: "사용자 설정이 생성되었습니다.", config });
   } catch (error) {
     console.error("사용자 설정 생성 오류:", error);
     res.status(500).json({
@@ -287,39 +211,8 @@ export const updateUserConfig = async (req: Request, res: Response) => {
     }
 
     const { active_theme } = req.body;
-
-    // 설정 존재 확인
-    const config = await UserConfig.findByPk(user_id);
-    if (!config) {
-      return res.status(404).json({
-        success: false,
-        message: "사용자 설정을 찾을 수 없습니다.",
-        errorCode: "USER_CONFIG_NOT_FOUND",
-      });
-    }
-
-    // 테마 존재 확인
-    if (active_theme) {
-      const theme = await Theme.findByPk(active_theme);
-      if (!theme) {
-        return res.status(404).json({
-          success: false,
-          message: "해당 테마를 찾을 수 없습니다.",
-          errorCode: "THEME_NOT_FOUND",
-        });
-      }
-    }
-
-    // 설정 수정
-    await config.update({
-      active_theme: active_theme || config.active_theme,
-    });
-
-    res.json({
-      success: true,
-      message: "사용자 설정이 수정되었습니다.",
-      config,
-    });
+    const config = await updateUserConfigForUser(user_id, { active_theme });
+    return res.json({ success: true, message: "사용자 설정이 수정되었습니다.", config });
   } catch (error) {
     console.error("사용자 설정 수정 오류:", error);
     res.status(500).json({
@@ -380,23 +273,8 @@ export const deleteUserConfig = async (req: Request, res: Response) => {
       });
     }
 
-    // 설정 존재 확인
-    const config = await UserConfig.findByPk(user_id);
-    if (!config) {
-      return res.status(404).json({
-        success: false,
-        message: "사용자 설정을 찾을 수 없습니다.",
-        errorCode: "USER_CONFIG_NOT_FOUND",
-      });
-    }
-
-    // 설정 삭제
-    await config.destroy();
-
-    res.json({
-      success: true,
-      message: "사용자 설정이 삭제되었습니다.",
-    });
+    await deleteUserConfigForUser(user_id);
+    return res.json({ success: true, message: "사용자 설정이 삭제되었습니다." });
   } catch (error) {
     console.error("사용자 설정 삭제 오류:", error);
     res.status(500).json({
